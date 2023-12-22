@@ -2,7 +2,6 @@
 
 pub mod prelude;
 
-pub mod actions;
 pub mod route_names;
 pub mod routes;
 pub mod sessions;

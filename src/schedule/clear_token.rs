@@ -1,9 +1,9 @@
+use crate::service::token::Token;
+use ::entity::sessions;
 use redis::{AsyncCommands, Client};
 use sea_orm::DatabaseConnection;
 use sea_orm::*;
 use tokio::time::{interval, Duration};
-
-use crate::{entity::sessions, service::token::Token};
 
 pub fn clear_token_timer(redis: Client, db_conn: DatabaseConnection) {
     tokio::spawn(async move {
@@ -31,7 +31,7 @@ pub fn clear_token_timer(redis: Client, db_conn: DatabaseConnection) {
                         Ok(Some(session)) => {
                             println!("into Some");
                             let mut next_session: sessions::ActiveModel = session.into();
-                            next_session.leaved_at = Set(Some(token.updated_at as i32));
+                            next_session.leaved_at = Set(token.updated_at);
                             let _ = next_session.update(&db_conn).await;
                         }
 

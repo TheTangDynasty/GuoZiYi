@@ -6,12 +6,12 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(table_name = "routes")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i32,
+    pub id: i64,
     pub pathname: String,
     pub route: String,
-    pub created_at: i32,
-    pub cost_time: i32,
-    pub leaved_at: i32,
+    pub created_at: i64,
+    pub cost_time: i64,
+    pub leaved_at: i64,
     pub url: String,
     #[sea_orm(column_type = "Text")]
     pub search_obj: String,

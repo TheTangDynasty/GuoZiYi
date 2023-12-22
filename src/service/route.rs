@@ -2,16 +2,15 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use crate::{
-    entity::{route_names, routes},
-    utils::app_state::AppState,
-};
+use ::entity::{route_names, routes};
+
+use crate::utils::app_state::AppState;
 use sea_orm::*;
 
 #[derive(Deserialize, Debug)]
 pub struct RouteItem {
-    pub commingTime: u64,
-    pub leaveTime: u64,
+    pub commingTime: i64,
+    pub leaveTime: i64,
     pub pathname: String,
     pub url: String,
     pub route: String,
@@ -19,8 +18,8 @@ pub struct RouteItem {
 }
 
 impl RouteItem {
-    pub fn get_cost_time(&self) -> i32 {
-        (self.leaveTime - self.commingTime) as i32
+    pub fn get_cost_time(&self) -> i64 {
+        self.leaveTime - self.commingTime
     }
 }
 
@@ -34,8 +33,8 @@ impl AppState {
         routes::ActiveModel {
             pathname: Set(route.pathname.clone()),
             route: Set(route.route.clone()),
-            created_at: Set(route.commingTime as i32),
-            leaved_at: Set(route.leaveTime as i32),
+            created_at: Set(route.commingTime),
+            leaved_at: Set(route.leaveTime),
             cost_time: Set(route.get_cost_time()),
             url: Set(route.url.clone()),
             search_obj: Set(serde_json::to_string(&route.searchObj).unwrap()),
@@ -57,11 +56,30 @@ impl AppState {
     ) -> Result<route_names::Model, sea_orm::DbErr> {
         let now = chrono::Local::now().timestamp();
         route_names::ActiveModel {
-            name: Set(Some(name.clone())),
-            created_at: Set(Some(now as i32)),
+            name: Set(name.clone()),
+            created_at: Set(now),
             ..Default::default()
         }
         .insert(&self.db)
         .await
+    }
+
+    pub async fn get_route_name_count(&self, name: &String) -> Result<u64, sea_orm::DbErr> {
+        routes::Entity::find()
+            .filter(routes::Column::Route.eq(name))
+            .count(&self.db)
+            .await
+    }
+
+    pub async fn get_routes_count_by_route_and_date(
+        &self,
+        start_date: i64,
+        end_date: i64,
+    ) -> Result<u64, sea_orm::DbErr> {
+        routes::Entity::find()
+            .filter(routes::Column::CreatedAt.gte(start_date))
+            .filter(routes::Column::CreatedAt.lte(end_date))
+            .count(&self.db)
+            .await
     }
 }

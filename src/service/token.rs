@@ -1,6 +1,7 @@
 use std::error::Error;
 
-use crate::{entity::sessions, utils::app_state::AppState};
+use crate::utils::app_state::AppState;
+use ::entity::sessions;
 use chrono::Local;
 use redis::Commands;
 use redis_macros::{FromRedisValue, ToRedisArgs};
@@ -34,9 +35,9 @@ impl AppState {
         )?;
         sessions::ActiveModel {
             id: Set(uuid.clone()),
-            user_name: Set(Some(username.clone())),
-            created_at: Set(Some(now as i32)),
-            leaved_at: Set(Some(now as i32)),
+            user_name: Set(username.clone()),
+            created_at: Set(now),
+            leaved_at: Set(now),
             ..Default::default()
         }
         .insert(&self.db)

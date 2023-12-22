@@ -1,10 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, task::Context};
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{Html, IntoResponse},
+    Json,
+};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::{entity::routes, service::route::RouteItem, utils::app_state::AppState};
+use crate::{service::route::RouteItem, utils::app_state::AppState};
 
 #[derive(Deserialize)]
 pub struct CreateTokenBody {
@@ -34,12 +39,10 @@ pub async fn create_token(
     }
 }
 
-pub async fn alive_token(mut state: State<AppState>) -> impl IntoResponse {
-    let tokens = state.get_alive_tokens().await;
-    Json(json!({
-        "data": tokens,
-        "code": 0
-    }))
+pub async fn alive_token(state: State<AppState>) -> impl IntoResponse {
+    let context = tera::Context::new();
+    let html = state.tera.render("routes.tera", &context).unwrap();
+    Html(html)
 }
 
 #[derive(Deserialize, Debug)]
@@ -49,7 +52,7 @@ pub struct RecordBody {
 }
 
 pub async fn record(mut state: State<AppState>, Json(body): Json<RecordBody>) -> impl IntoResponse {
-    let routes = body.routes;
+    let mut routes = body.routes;
     let uuid = body.uuid;
 
     let token = match state.get_token(uuid.clone()).await {
@@ -67,19 +70,32 @@ pub async fn record(mut state: State<AppState>, Json(body): Json<RecordBody>) ->
             }))
         }
     };
-    let username = token.user_name.unwrap();
+    let username = token.user_name;
 
     let mut route_names: Vec<String> = state
         .get_route_names()
         .await
         .unwrap()
         .iter()
-        .map(|r| r.name.clone().unwrap())
+        .map(|r| r.name.clone())
         .collect();
 
-    for route in routes.iter() {
-        if route.get_cost_time() > 1000 {
-            let _ = state.create_route(route, &uuid, &username).await;
+    let ms_stamp_limit = 1e12 as i64;
+
+    for route in &mut routes {
+        if route.commingTime > ms_stamp_limit {
+            route.commingTime = route.commingTime / 1000;
+        }
+        if route.leaveTime > ms_stamp_limit {
+            route.leaveTime = route.leaveTime / 1000;
+        }
+        if route.get_cost_time() > 1 {
+            match state.create_route(route, &uuid, &username).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("{:?}", e);
+                }
+            }
             if !route_names.contains(&route.route) {
                 route_names.push(route.route.clone());
                 let _ = state.create_route_name(&route.route).await;

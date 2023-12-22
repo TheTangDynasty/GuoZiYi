@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Route Detail: {{ route_name }}</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 20px 0;
+      }
+
+      table th,
+      table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+
+      table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+
+      table tr:hover {
+        background-color: #f1f1f1;
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+        <thead>
+          <tr>
+            <th>date</th>
+            <th>visit count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in seven_day_data %}
+          <tr>
+            <td>{{ item.date_offset }}</td>
+            <td>{{ item.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </body>
+</html>
